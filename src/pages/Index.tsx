@@ -115,6 +115,7 @@ const Index = () => {
                   <AnalysisResults 
                     authenticity={authenticity} 
                     isProcessing={isProcessing}
+                    audioBuffer={audioBuffer}
                   />
                 </div>
               </div>
