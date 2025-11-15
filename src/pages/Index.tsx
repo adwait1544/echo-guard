@@ -41,10 +41,10 @@ const Index = () => {
         description: "Detecting potential forgery",
       });
       
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simulate processing time for realistic UX
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const score = analyzeForgery(mfcc);
+      const score = await analyzeForgery(mfcc);
       setAuthenticity(score);
       
       toast({
