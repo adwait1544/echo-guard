@@ -1,13 +1,47 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 interface AnalysisResultsProps {
   authenticity: number;
   isProcessing: boolean;
+  audioBuffer?: AudioBuffer | null;
 }
 
-export const AnalysisResults = ({ authenticity, isProcessing }: AnalysisResultsProps) => {
+export const AnalysisResults = ({ authenticity, isProcessing, audioBuffer }: AnalysisResultsProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (!audioBuffer || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const data = audioBuffer.getChannelData(0);
+    const step = Math.ceil(data.length / width);
+    const amp = height / 2;
+
+    ctx.fillStyle = 'hsl(var(--background))';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = 'hsl(var(--primary))';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+
+    for (let i = 0; i < width; i++) {
+      const min = Math.min(...Array.from(data.slice(i * step, (i + 1) * step)));
+      const max = Math.max(...Array.from(data.slice(i * step, (i + 1) * step)));
+      
+      ctx.moveTo(i, (1 + min) * amp);
+      ctx.lineTo(i, (1 + max) * amp);
+    }
+
+    ctx.stroke();
+  }, [audioBuffer]);
   const getStatus = () => {
     if (authenticity >= 0.8) return { 
       label: "Authentic", 
@@ -43,6 +77,18 @@ export const AnalysisResults = ({ authenticity, isProcessing }: AnalysisResultsP
         </div>
       ) : (
         <div className="space-y-6">
+          {audioBuffer && (
+            <div className="p-4 rounded-lg bg-card border border-border">
+              <p className="text-sm text-muted-foreground mb-2">Audio Waveform</p>
+              <canvas
+                ref={canvasRef}
+                width={600}
+                height={80}
+                className="w-full h-20 rounded"
+              />
+            </div>
+          )}
+
           <div className={`flex items-center gap-3 p-4 rounded-lg ${status.bgColor}`}>
             <StatusIcon className={`w-8 h-8 ${status.color}`} />
             <div className="flex-1">
