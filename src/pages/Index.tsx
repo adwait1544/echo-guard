@@ -18,14 +18,14 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState<string>("");
   const { toast } = useToast();
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       navigate("/auth");
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const handleFileSelect = async (file: File) => {
     setIsProcessing(true);
