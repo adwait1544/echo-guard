@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { AudioUploader } from "@/components/AudioUploader";
 import { WaveformVisualizer } from "@/components/WaveformVisualizer";
 import { MFCCVisualizer } from "@/components/MFCCVisualizer";
 import { AnalysisResults } from "@/components/AnalysisResults";
 import { extractMFCC, analyzeForgery } from "@/utils/audioProcessing";
 import { useToast } from "@/hooks/use-toast";
-import { Activity } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Activity, History, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
@@ -14,6 +18,14 @@ const Index = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState<string>("");
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
 
   const handleFileSelect = async (file: File) => {
     setIsProcessing(true);
@@ -47,6 +59,24 @@ const Index = () => {
       const score = await analyzeForgery(mfcc);
       setAuthenticity(score);
       
+      // Save to database
+      if (user) {
+        const { error: dbError } = await supabase
+          .from("audio_analyses")
+          .insert({
+            user_id: user.id,
+            file_name: file.name,
+            authenticity_score: score,
+            duration: buffer.duration,
+            sample_rate: buffer.sampleRate,
+            mfcc_data: mfcc,
+          });
+
+        if (dbError) {
+          console.error("Error saving analysis:", dbError);
+        }
+      }
+      
       toast({
         title: "Analysis complete",
         description: `Authenticity score: ${(score * 100).toFixed(1)}%`,
@@ -68,11 +98,31 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-3">
-            <Activity className="w-8 h-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">Audio Forgery Detection</h1>
-              <p className="text-muted-foreground">CNN-based MFCC Analysis System</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Activity className="w-8 h-8 text-primary" />
+              <div>
+                <h1 className="text-3xl font-bold">Audio Forgery Detection</h1>
+                <p className="text-muted-foreground">CNN-based MFCC Analysis System</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/history")}
+              >
+                <History className="w-4 h-4 mr-2" />
+                History
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => signOut()}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
             </div>
           </div>
         </div>
