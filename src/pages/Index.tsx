@@ -4,7 +4,7 @@ import { AudioUploader } from "@/components/AudioUploader";
 import { WaveformVisualizer } from "@/components/WaveformVisualizer";
 import { MFCCVisualizer } from "@/components/MFCCVisualizer";
 import { AnalysisResults } from "@/components/AnalysisResults";
-import { extractMFCC, analyzeForgery } from "@/utils/audioProcessing";
+import { extractMFCC, analyzeForgery, ForgeryAnalysisResult } from "@/utils/audioProcessing";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 const Index = () => {
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [mfccData, setMfccData] = useState<number[][] | null>(null);
-  const [authenticity, setAuthenticity] = useState<number>(0);
+  const [analysisResult, setAnalysisResult] = useState<ForgeryAnalysisResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [fileName, setFileName] = useState<string>("");
   const { toast } = useToast();
@@ -38,7 +38,6 @@ const Index = () => {
       
       setAudioBuffer(buffer);
       
-      // Extract MFCC features
       toast({
         title: "Extracting MFCC features...",
         description: "Processing audio signal",
@@ -47,17 +46,13 @@ const Index = () => {
       const mfcc = extractMFCC(buffer);
       setMfccData(mfcc);
       
-      // Analyze for forgery
       toast({
-        title: "Running CNN analysis...",
+        title: "Running AI analysis...",
         description: "Detecting potential forgery",
       });
       
-      // Simulate processing time for realistic UX
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const score = await analyzeForgery(mfcc);
-      setAuthenticity(score);
+      const result = await analyzeForgery(mfcc, buffer.duration, buffer.sampleRate);
+      setAnalysisResult(result);
       
       // Save to database
       if (user) {
@@ -66,7 +61,7 @@ const Index = () => {
           .insert({
             user_id: user.id,
             file_name: file.name,
-            authenticity_score: score,
+            authenticity_score: result.authenticity_score,
             duration: buffer.duration,
             sample_rate: buffer.sampleRate,
             mfcc_data: mfcc,
@@ -79,12 +74,12 @@ const Index = () => {
       
       toast({
         title: "Analysis complete",
-        description: `Authenticity score: ${(score * 100).toFixed(1)}%`,
+        description: `Verdict: ${result.verdict} (${(result.authenticity_score * 100).toFixed(1)}%)`,
       });
     } catch (error) {
       toast({
         title: "Error processing audio",
-        description: "Please try a different file",
+        description: error instanceof Error ? error.message : "Please try a different file",
         variant: "destructive",
       });
       console.error(error);
@@ -95,7 +90,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
@@ -103,23 +97,15 @@ const Index = () => {
               <Activity className="w-8 h-8 text-primary" />
               <div>
                 <h1 className="text-3xl font-bold">Audio Forgery Detection</h1>
-                <p className="text-muted-foreground">CNN-based MFCC Analysis System</p>
+                <p className="text-muted-foreground">AI-powered MFCC Analysis System</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/history")}
-              >
+              <Button variant="outline" size="sm" onClick={() => navigate("/history")}>
                 <History className="w-4 h-4 mr-2" />
                 History
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => signOut()}
-              >
+              <Button variant="outline" size="sm" onClick={() => signOut()}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
@@ -128,7 +114,6 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           {!audioBuffer ? (
@@ -146,7 +131,7 @@ const Index = () => {
                   onClick={() => {
                     setAudioBuffer(null);
                     setMfccData(null);
-                    setAuthenticity(0);
+                    setAnalysisResult(null);
                     setFileName("");
                   }}
                   className="text-primary hover:text-primary/80 transition-colors text-sm font-medium"
@@ -163,7 +148,7 @@ const Index = () => {
                 
                 <div>
                   <AnalysisResults 
-                    authenticity={authenticity} 
+                    result={analysisResult}
                     isProcessing={isProcessing}
                     audioBuffer={audioBuffer}
                   />
@@ -174,10 +159,9 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border mt-12 py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>Prototype System • CNN + MFCC Feature Extraction</p>
+          <p>AI-Powered Audio Forensics • MFCC Feature Extraction</p>
         </div>
       </footer>
     </div>
