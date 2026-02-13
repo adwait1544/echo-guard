@@ -1,63 +1,50 @@
-Perfect — now we’re doing this properly.
-
-Based on your full project structure (Vite + React + Supabase + Edge Functions + real API handlers + audio analysis pipeline), here is a complete professional README description that reflects everything accurately and makes it look fully custom-built.
-
-You can replace your README with this:
-
-🎙️ Echo Guard
-AI-Powered Audio Forgery Detection System
+# 🎙️ Echo Guard  
+## AI-Powered Audio Forgery Detection System
 
 Echo Guard is a full-stack audio forensics platform designed to detect potential voice forgery using MFCC feature extraction and AI-based classification.
 
 The system analyzes uploaded audio files, extracts spectral speech characteristics, evaluates authenticity using machine learning inference, and stores results securely with row-level access control.
 
-🌐 Live System
+---
+
+## 🌐 Live System
 
 Deployed on production infrastructure with:
 
-Frontend: Vite + React
+- **Frontend:** Vite + React  
+- **Backend:** Supabase Edge Functions & API handlers  
+- **Database:** Supabase PostgreSQL with Row-Level Security (RLS)  
+- **Hosting:** Optimized static deployment (Vercel-compatible)  
 
-Backend: Supabase Edge Functions & API handlers
+---
 
-Database: Supabase PostgreSQL with Row-Level Security (RLS)
-
-Hosting: Optimized static deployment (Vercel-compatible)
-
-🧠 System Overview
+## 🧠 System Overview
 
 The application processes audio through the following pipeline:
 
-Audio Upload
+1. Audio Upload  
+2. Audio Decoding via Web Audio API  
+3. MFCC Feature Extraction  
+4. AI Model Inference  
+5. Authenticity Scoring  
+6. Verdict Classification  
+7. Secure Storage & History Retrieval  
 
-Audio Decoding via Web Audio API
+### Outputs include:
 
-MFCC Feature Extraction
+- Authenticity Score (0–100%)  
+- Verdict (Authentic / Forged / Uncertain)  
+- Confidence Level  
+- Audio Duration  
+- Sample Rate  
+- Model Version  
+- Timestamped Analysis History  
 
-AI Model Inference
+---
 
-Authenticity Scoring
+## 🏗️ Project Structure
 
-Verdict Classification
-
-Secure Storage & History Retrieval
-
-Outputs include:
-
-Authenticity Score (0–100%)
-
-Verdict (Authentic / Forged / Uncertain)
-
-Confidence Level
-
-Audio Duration
-
-Sample Rate
-
-Model Version
-
-Timestamped Analysis History
-
-🏗️ Project Structure
+```
 root
 │
 ├── public/
@@ -92,171 +79,177 @@ root
 ├── tailwind.config.ts
 ├── tsconfig.json
 └── README.md
+```
 
-🔐 Authentication & Security
+---
 
-✔ Supabase Authentication
-✔ Row-Level Security (RLS) enforced
-✔ User-scoped data queries
-✔ Token-based API validation
-✔ Secure analysis history per user
+## 🔐 Authentication & Security
 
-Each analysis record contains:
+- ✔ Supabase Authentication  
+- ✔ Row-Level Security (RLS) enforced  
+- ✔ User-scoped data queries  
+- ✔ Token-based API validation  
+- ✔ Secure analysis history per user  
 
-id
+### Each analysis record contains:
 
-user_id
-
-file_name
-
-authenticity_score
-
-verdict
-
-confidence
-
-duration
-
-sample_rate
-
-model_version
-
-details (JSON)
-
-created_at
+- `id`  
+- `user_id`  
+- `file_name`  
+- `authenticity_score`  
+- `verdict`  
+- `confidence`  
+- `duration`  
+- `sample_rate`  
+- `model_version`  
+- `details (JSON)`  
+- `created_at`  
 
 Indexed for optimized retrieval.
 
-🎧 Audio Processing Layer
+---
 
-Implemented in src/utils/audioProcessing:
+## 🎧 Audio Processing Layer
 
-Audio decoding using Web Audio API
+Implemented in:
 
-MFCC feature extraction
+```
+src/utils/audioProcessing
+```
 
-CNN-MFCC based classification
+Includes:
 
-Verdict decision logic
-
-Confidence scoring
+- Audio decoding using Web Audio API  
+- MFCC feature extraction  
+- CNN-MFCC based classification  
+- Verdict decision logic  
+- Confidence scoring  
 
 Designed to support:
 
-Offline file-based processing
+- Offline file-based processing  
+- Future real-time streaming mode  
 
-Future real-time streaming mode
+---
 
-📊 Visualization Layer
+## 📊 Visualization Layer
 
 Components include:
 
-WaveformVisualizer
+- `WaveformVisualizer`  
+- `MFCCVisualizer`  
+- `AnalysisResults` panel  
+- `AudioUploader` interface  
+- Historical analysis viewer  
 
-MFCCVisualizer
+Built using:
 
-AnalysisResults panel
-
-AudioUploader interface
-
-Historical analysis viewer
-
-All built using:
-
-React
-
-Tailwind CSS
-
-shadcn-ui
+- React  
+- Tailwind CSS  
+- shadcn-ui  
 
 Optimized rendering for smooth UI performance.
 
-🗄️ Backend Layer
+---
 
-The project includes:
+## 🗄️ Backend Layer
 
-Supabase Edge Function
+### Supabase Edge Function
 
+```
 functions/analyze-audio
+```
 
 Handles:
 
-Audio analysis requests
+- Audio analysis requests  
+- Model execution  
+- Guardrail validation  
+- Standardized response schema  
 
-Model execution
-
-Guardrail validation
-
-Standardized response schema
-
-API Health Endpoint
+### API Health Endpoint
 
 Monitors backend availability and system status.
 
-Database Migrations
+### Database Migrations
 
-Complete schema control via supabase/migrations.
+Complete schema control via:
 
-⚡ Performance Considerations
+```
+supabase/migrations
+```
 
-Asynchronous audio decoding
+---
 
-Non-blocking feature extraction
+## ⚡ Performance Considerations
 
-Optimized React rendering
-
-Indexed database queries
-
-Lightweight JSON storage
-
-Scalable edge-function architecture
+- Asynchronous audio decoding  
+- Non-blocking feature extraction  
+- Optimized React rendering  
+- Indexed database queries  
+- Lightweight JSON storage  
+- Scalable edge-function architecture  
 
 Prepared for real-time streaming adaptation.
 
-🚀 Running Locally
-Install Dependencies
+---
+
+## 🚀 Running Locally
+
+### Install Dependencies
+
+```bash
 npm install
+```
 
-Run Development Server
+### Run Development Server
+
+```bash
 npm run dev
-
+```
 
 App runs at:
 
+```
 http://localhost:5173
+```
 
-🔧 Environment Variables
+---
 
-Create .env file:
+## 🔧 Environment Variables
 
+Create a `.env` file in the root directory:
+
+```
 VITE_SUPABASE_URL=your_url
 VITE_SUPABASE_ANON_KEY=your_key
+```
 
-📦 Deployment
+---
+
+## 📦 Deployment
 
 Build production bundle:
 
+```bash
 npm run build
-
+```
 
 Deploy via:
 
-Vercel
+- Vercel  
+- Netlify  
+- Supabase hosting  
+- Any static-compatible platform  
 
-Netlify
+---
 
-Supabase hosting
+## 🔮 Future Enhancements
 
-Any static-compatible platform
+- Real-time microphone streaming analysis  
+- Sliding-window live authenticity scoring  
+- Transformer-based audio classifier  
+- Detailed forensic reporting dashboard  
+- API-based enterprise deployment mode  
 
-🔮 Future Enhancements
-
-Real-time microphone streaming analysis
-
-Sliding-window live authenticity scoring
-
-Transformer-based audio classifier
-
-Detailed forensic reporting dashboard
-
-API-based enterprise deployment mode
+---
