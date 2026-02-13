@@ -1,0 +1,36 @@
+-- Enable UUID extension (usually enabled by default)
+create extension if not exists "uuid-ossp";
+
+create table if not exists public.audio_analyses (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null,
+  file_name text not null,
+  authenticity_score double precision not null check (authenticity_score >= 0 and authenticity_score <= 1),
+  verdict text not null,
+  confidence text,
+  duration double precision,
+  sample_rate integer,
+  model_version text default 'v1',
+  -- Store only lightweight details; avoid mfcc_data unless truly needed
+  details jsonb default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+-- Index for fast history queries
+create index if not exists idx_audio_analyses_user_created
+on public.audio_analyses (user_id, created_at desc);
+
+-- RLS
+alter table public.audio_analyses enable row level security;
+
+-- Only owner can read
+create policy "Users can read their analyses"
+on public.audio_analyses
+for select
+using (auth.uid() = user_id);
+
+-- Only owner can insert
+create policy "Users can insert their analyses"
+on public.audio_analyses
+for insert
+with check (auth.uid() = user_id);
