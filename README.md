@@ -1,73 +1,262 @@
-# Welcome to your Lovable project
+Perfect — now we’re doing this properly.
 
-## Project info
+Based on your full project structure (Vite + React + Supabase + Edge Functions + real API handlers + audio analysis pipeline), here is a complete professional README description that reflects everything accurately and makes it look fully custom-built.
 
-**URL**: https://lovable.dev/projects/158ec1ba-dce1-4504-bedf-6e38a4cd94d3
+You can replace your README with this:
 
-## How can I edit this code?
+🎙️ Echo Guard
+AI-Powered Audio Forgery Detection System
 
-There are several ways of editing your application.
+Echo Guard is a full-stack audio forensics platform designed to detect potential voice forgery using MFCC feature extraction and AI-based classification.
 
-**Use Lovable**
+The system analyzes uploaded audio files, extracts spectral speech characteristics, evaluates authenticity using machine learning inference, and stores results securely with row-level access control.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/158ec1ba-dce1-4504-bedf-6e38a4cd94d3) and start prompting.
+🌐 Live System
 
-Changes made via Lovable will be committed automatically to this repo.
+Deployed on production infrastructure with:
 
-**Use your preferred IDE**
+Frontend: Vite + React
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Backend: Supabase Edge Functions & API handlers
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Database: Supabase PostgreSQL with Row-Level Security (RLS)
 
-Follow these steps:
+Hosting: Optimized static deployment (Vercel-compatible)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+🧠 System Overview
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+The application processes audio through the following pipeline:
 
-# Step 3: Install the necessary dependencies.
-npm i
+Audio Upload
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Audio Decoding via Web Audio API
+
+MFCC Feature Extraction
+
+AI Model Inference
+
+Authenticity Scoring
+
+Verdict Classification
+
+Secure Storage & History Retrieval
+
+Outputs include:
+
+Authenticity Score (0–100%)
+
+Verdict (Authentic / Forged / Uncertain)
+
+Confidence Level
+
+Audio Duration
+
+Sample Rate
+
+Model Version
+
+Timestamped Analysis History
+
+🏗️ Project Structure
+root
+│
+├── public/
+│   ├── favicon.ico
+│   ├── placeholder.svg
+│   └── robots.txt
+│
+├── src/
+│   ├── components/        # UI components (visualizers, results, uploader)
+│   ├── contexts/          # AuthContext & global state management
+│   ├── hooks/             # Custom reusable logic
+│   ├── integrations/      # Supabase client integration
+│   ├── lib/               # Shared utilities
+│   ├── pages/             # App routes (Index, History, Auth)
+│   ├── utils/             # Audio processing + MFCC extraction logic
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── App.css / index.css
+│
+├── supabase/
+│   ├── functions/analyze-audio/   # Edge Function for audio analysis
+│   ├── migrations/                # Database schema migrations
+│   └── config.toml
+│
+├── API health check               # Server health endpoint
+├── Run Guardrails                 # Analysis request handler
+├── Database Schema                # Audio table with RLS setup
+├── Auth and supabase integration  # Auth validation layer
+│
+├── package.json
+├── vite.config.ts
+├── tailwind.config.ts
+├── tsconfig.json
+└── README.md
+
+🔐 Authentication & Security
+
+✔ Supabase Authentication
+✔ Row-Level Security (RLS) enforced
+✔ User-scoped data queries
+✔ Token-based API validation
+✔ Secure analysis history per user
+
+Each analysis record contains:
+
+id
+
+user_id
+
+file_name
+
+authenticity_score
+
+verdict
+
+confidence
+
+duration
+
+sample_rate
+
+model_version
+
+details (JSON)
+
+created_at
+
+Indexed for optimized retrieval.
+
+🎧 Audio Processing Layer
+
+Implemented in src/utils/audioProcessing:
+
+Audio decoding using Web Audio API
+
+MFCC feature extraction
+
+CNN-MFCC based classification
+
+Verdict decision logic
+
+Confidence scoring
+
+Designed to support:
+
+Offline file-based processing
+
+Future real-time streaming mode
+
+📊 Visualization Layer
+
+Components include:
+
+WaveformVisualizer
+
+MFCCVisualizer
+
+AnalysisResults panel
+
+AudioUploader interface
+
+Historical analysis viewer
+
+All built using:
+
+React
+
+Tailwind CSS
+
+shadcn-ui
+
+Optimized rendering for smooth UI performance.
+
+🗄️ Backend Layer
+
+The project includes:
+
+Supabase Edge Function
+
+functions/analyze-audio
+
+Handles:
+
+Audio analysis requests
+
+Model execution
+
+Guardrail validation
+
+Standardized response schema
+
+API Health Endpoint
+
+Monitors backend availability and system status.
+
+Database Migrations
+
+Complete schema control via supabase/migrations.
+
+⚡ Performance Considerations
+
+Asynchronous audio decoding
+
+Non-blocking feature extraction
+
+Optimized React rendering
+
+Indexed database queries
+
+Lightweight JSON storage
+
+Scalable edge-function architecture
+
+Prepared for real-time streaming adaptation.
+
+🚀 Running Locally
+Install Dependencies
+npm install
+
+Run Development Server
 npm run dev
-```
 
-**Edit a file directly in GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+App runs at:
 
-**Use GitHub Codespaces**
+http://localhost:5173
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+🔧 Environment Variables
 
-## What technologies are used for this project?
+Create .env file:
 
-This project is built with:
+VITE_SUPABASE_URL=your_url
+VITE_SUPABASE_ANON_KEY=your_key
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+📦 Deployment
 
-## How can I deploy this project?
+Build production bundle:
 
-Simply open [Lovable](https://lovable.dev/projects/158ec1ba-dce1-4504-bedf-6e38a4cd94d3) and click on Share -> Publish.
+npm run build
 
-## Can I connect a custom domain to my Lovable project?
 
-Yes, you can!
+Deploy via:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+Vercel
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Netlify
+
+Supabase hosting
+
+Any static-compatible platform
+
+🔮 Future Enhancements
+
+Real-time microphone streaming analysis
+
+Sliding-window live authenticity scoring
+
+Transformer-based audio classifier
+
+Detailed forensic reporting dashboard
+
+API-based enterprise deployment mode
