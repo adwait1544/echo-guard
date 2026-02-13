@@ -1,0 +1,42 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { z } from "zod";
+import { requireUser } from "./_lib/auth";
+
+const bodySchema = z.object({
+  file_name: z.string().min(1).max(255),
+  duration: z.number().optional(),
+  sample_rate: z.number().int().positive().optional(),
+  model_version: z.string().optional(),
+});
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+
+    const { supabase, user } = await requireUser(req);
+    const body = bodySchema.parse(req.body);
+
+    // Start session row with placeholder score; you can also skip this endpoint entirely.
+    const { data, error } = await supabase
+      .from("audio_analyses")
+      .insert({
+        user_id: user.id,
+        file_name: body.file_name,
+        authenticity_score: 0.5,
+        verdict: "Processing",
+        confidence: "Unknown",
+        duration: body.duration ?? null,
+        sample_rate: body.sample_rate ?? null,
+        model_version: body.model_version ?? "v1",
+        details: { status: "started" },
+      })
+      .select("id")
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    return res.status(200).json({ id: data.id });
+  } catch (e: any) {
+    const status = e?.status || 500;
+    return res.status(status).json({ error: e?.message || "Server error" });
+  }
+}
