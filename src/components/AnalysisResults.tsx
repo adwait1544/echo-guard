@@ -19,16 +19,20 @@ export const AnalysisResults = ({ authenticity, isProcessing, audioBuffer }: Ana
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const styles = getComputedStyle(canvas);
+    const bgColor = styles.getPropertyValue('--background').trim();
+    const primaryColor = styles.getPropertyValue('--primary').trim();
+
     const width = canvas.width;
     const height = canvas.height;
     const data = audioBuffer.getChannelData(0);
     const step = Math.ceil(data.length / width);
     const amp = height / 2;
 
-    ctx.fillStyle = 'hsl(var(--background))';
+    ctx.fillStyle = bgColor ? `hsl(${bgColor})` : "#181d2a";
     ctx.fillRect(0, 0, width, height);
 
-    ctx.strokeStyle = 'hsl(var(--primary))';
+    ctx.strokeStyle = primaryColor ? `hsl(${primaryColor})` : "#22b8cf";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
 
