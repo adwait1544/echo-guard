@@ -15,17 +15,21 @@ export const WaveformVisualizer = ({ audioBuffer }: WaveformVisualizerProps) => 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const styles = getComputedStyle(canvas);
+    const bgColor = styles.getPropertyValue('--card').trim();
+    const primaryColor = styles.getPropertyValue('--primary').trim();
+
     const width = canvas.width;
     const height = canvas.height;
     const data = audioBuffer.getChannelData(0);
     const step = Math.ceil(data.length / width);
     const amp = height / 2;
 
-    ctx.fillStyle = "hsl(var(--card))";
+    ctx.fillStyle = bgColor ? `hsl(${bgColor})` : "#1e2330";
     ctx.fillRect(0, 0, width, height);
 
     ctx.lineWidth = 1;
-    ctx.strokeStyle = "hsl(var(--primary))";
+    ctx.strokeStyle = primaryColor ? `hsl(${primaryColor})` : "#22b8cf";
     ctx.beginPath();
 
     for (let i = 0; i < width; i++) {
