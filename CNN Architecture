@@ -1,0 +1,219 @@
+import numpy as np
+import librosa
+import librosa.feature
+import python_speech_features # Reverted to general import
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import scipy.io.wavfile
+import os
+from scipy.fftpack import dct # Added for custom LFCC computation
+
+# --- Configuration ---
+# Audio settings
+SAMPLE_RATE = 16000  # Standard sample rate
+N_FFT = 512          # N-point FFT
+WIN_LEN_MS = 0.025   # Window length in seconds (25ms)
+WIN_STEP_MS = 0.010  # Window step in seconds (10ms)
+N_FILT = 40          # Number of linear filters
+N_LFCC = 20          # Number of LFCC coefficients to return
+
+# Model settings
+# Max number of time-steps to use from features.
+# Shorter audio will be padded, longer will be truncated.
+MAX_FEAT_LEN = 800
+# Total features: N_LFCC (base) + N_LFCC (delta) + N_LFCC (delta-delta)
+N_FEATURES = N_LFCC * 3
+
+def create_dummy_audio(filename="dummy_test_audio.wav"):
+    """
+    Creates a dummy audio file to make the script runnable.
+    This file is just random noise.
+    """
+    print(f"Creating dummy audio file: {filename}")
+    # Generate 5 seconds of random noise
+    dummy_signal = np.random.uniform(low=-0.5, high=0.5, size=(SAMPLE_RATE * 5,))
+    # Write to a .wav file
+    # We use scipy to write because librosa's write function is (was) experimental
+    # Scale to 16-bit PCM range
+    scipy.io.wavfile.write(filename, SAMPLE_RATE, (dummy_signal * 32767).astype(np.int16))
+    print(f"Successfully created {filename}.")
+
+def custom_lfcc(signal, samplerate, winlen, winstep, nfilt, nfft, numcep, preemph):
+    """
+    Custom LFCC function using fbank and DCT, as python_speech_features.lfcc doesn't exist.
+    This implementation mimics the standard LFCC computation process.
+    """
+    # Compute filterbank energies (linear scale)
+    # fbank returns: feat, energy
+    feat, energy = python_speech_features.fbank(signal, samplerate=samplerate, winlen=winlen, winstep=winstep,
+                                                 nfilt=nfilt, nfft=nfft, preemph=preemph)
+
+    # Take log of energies. Handle potential log(0) issues.
+    log_feat = np.log(np.maximum(1e-20, feat)) # Add a small epsilon to prevent log(0)
+
+    # Apply Discrete Cosine Transform (DCT) to get cepstral coefficients
+    # Type 2 DCT is standard for MFCCs/LFCCs
+    lfcc_feat = dct(log_feat, type=2, axis=1, norm='ortho')[:, :numcep]
+
+    return lfcc_feat
+
+def extract_features(file_path):
+    """
+    Extracts LFCC + Delta + Double-Delta features from an audio file.
+    Based on the strategy from the presentation.
+    """
+    try:
+        # 1. Load and Resample
+        # librosa.load automatically resamples to `sr`
+        signal, sr = librosa.load(file_path, sr=SAMPLE_RATE, mono=True)
+
+        # 2. Normalize
+        signal = librosa.util.normalize(signal)
+
+        # 3. Calculate LFCC using custom function
+        # custom_lfcc takes signal and samplerate
+        # winlen and winstep are in seconds
+        lfcc_feat = custom_lfcc(
+            signal,
+            samplerate=sr,
+            winlen=WIN_LEN_MS,
+            winstep=WIN_STEP_MS,
+            nfilt=N_FILT,
+            nfft=N_FFT,
+            numcep=N_LFCC,
+            preemph=0.97
+        )
+
+        # 4. Calculate Deltas
+        delta_feat = librosa.feature.delta(lfcc_feat, order=1, axis=0)
+
+        # 5. Calculate Double Deltas
+        delta_delta_feat = librosa.feature.delta(lfcc_feat, order=2, axis=0)
+
+        # 6. Stack Features
+        # This creates a (num_frames, N_LFCC * 3) feature matrix
+        stacked_features = np.hstack((lfcc_feat, delta_feat, delta_delta_feat))
+
+        # 7. Pad or Truncate to fixed length (MAX_FEAT_LEN)
+        if stacked_features.shape[0] > MAX_FEAT_LEN:
+            # Truncate
+            stacked_features = stacked_features[:MAX_FEAT_LEN, :]
+        elif stacked_features.shape[0] < MAX_FEAT_LEN:
+            # Pad with zeros
+            pad_width = MAX_FEAT_LEN - stacked_features.shape[0]
+            stacked_features = np.pad(stacked_features, ((0, pad_width), (0, 0)), mode='constant')
+
+        return stacked_features
+
+    except Exception as e:
+        print(f"Error extracting features from {file_path}: {e}")
+        return None
+
+def build_model(input_shape):
+    """
+    Builds a simple 2D CNN model to classify the feature matrix.
+    """
+    print("Building detection model...")
+
+    # Input shape will be (MAX_FEAT_LEN, N_FEATURES)
+    inputs = tf.keras.Input(shape=input_shape)
+
+    # We need to add a "channel" dimension for Conv2D
+    # Shape becomes (MAX_FEAT_LEN, N_FEATURES, 1)
+    x = layers.Reshape((*input_shape, 1))(inputs)
+
+    # Convolutional Block 1
+    x = layers.Conv2D(16, kernel_size=(3, 3), activation='relu', padding='same')(x)
+    x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+    x = layers.Dropout(0.2)(x)
+
+    # Convolutional Block 2
+    x = layers.Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(x)
+    x = layers.MaxPooling2D(pool_size=(2, 2))(x)
+    x = layers.Dropout(0.2)(x)
+
+    # Flatten and feed to Dense layers
+    x = layers.Flatten()(x)
+    x = layers.Dense(64, activation='relu')(x)
+    x = layers.Dropout(0.3)(x)
+
+    # Output layer: 1 neuron with sigmoid for binary (Real/Fake) classification
+    outputs = layers.Dense(1, activation='sigmoid')(x)
+
+    model = models.Model(inputs=inputs, outputs=outputs)
+
+    # Compile the model
+    model.compile(
+        optimizer='adam',
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+
+    print("Model built successfully.")
+    model.summary()
+    return model
+
+def main():
+    """
+    Main function to run the prototype.
+    """
+    # --- 1. Create Model ---
+    input_shape = (MAX_FEAT_LEN, N_FEATURES)
+    model = build_model(input_shape)
+
+    # --- 2. Create Dummy Data for Training (DEMO ONLY) ---
+    # In a real project, you would load your dataset here.
+    print("\n--- Training on Dummy Data (DEMO) ---")
+    # Create 20 dummy "audio files" (features)
+    # (batch_size, height, width)
+    dummy_train_features = np.random.rand(20, MAX_FEAT_LEN, N_FEATURES)
+    # Create 20 dummy labels (0 for 'real', 1 for 'fake')
+    dummy_train_labels = np.random.randint(0, 2, size=(20,))
+
+    model.fit(
+        dummy_train_features,
+        dummy_train_labels,
+        epochs=3,
+        batch_size=4,
+        verbose=1
+    )
+    print("Dummy training complete.")
+
+    # --- 3. Run Prediction on a Test File ---
+    print("\n--- Running Prediction on a Test File ---")
+    # Create a dummy audio file to test prediction
+    test_audio_file = "dummy_test_audio.wav"
+    create_dummy_audio(test_audio_file)
+
+    # Extract features from the dummy file
+    features = extract_features(test_audio_file)
+
+    if features is not None:
+        # Model expects a batch, so add a batch dimension
+        # Shape changes from (MAX_FEAT_LEN, N_FEATURES) to (1, MAX_FEAT_LEN, N_FEATURES)
+        features_batch = np.expand_dims(features, axis=0)
+
+        # Run prediction
+        prediction = model.predict(features_batch)
+
+        # The output is a probability (0.0 to 1.0) due to the sigmoid function
+        confidence = prediction[0][0]
+
+        if confidence > 0.5:
+            result = "FORGED (FAKE)"
+            conf_percent = confidence * 100
+        else:
+            result = "AUTHENTIC (REAL)"
+            conf_percent = (1 - confidence) * 100
+
+        print("\n--- DETECTION RESULT ---")
+        print(f"File: {test_audio_file}")
+        print(f"Prediction: {result}")
+        print(f"Confidence: {conf_percent:.2f}%")
+
+    # Clean up the dummy file
+    if os.path.exists(test_audio_file):
+        os.remove(test_audio_file)
+
+if __name__ == "__main__":
+    main()
